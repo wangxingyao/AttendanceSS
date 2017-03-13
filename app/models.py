@@ -88,10 +88,9 @@ class Attendance(db.Model):
     atime = db.Column(db.DateTime(), default=datetime.utcnow)
     aresult = db.Column(db.String(64))
 
-    def __init__(self, sid, cid, atime, aresult):
+    def __init__(self, sid, cid, aresult):
         self.sid = sid
         self.cid = cid
-        self.atime = atime
         self.aresult = aresult
 
     def __repr__(self):
