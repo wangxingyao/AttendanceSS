@@ -1,6 +1,7 @@
 #coding:utf-8
 
 from app import db
+from datetime import datetime
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -84,7 +85,7 @@ class Attendance(db.Model):
     aid = db.Column(db.Integer, primary_key = True)
     sid = db.Column(db.Integer)
     cid = db.Column(db.Integer)
-    atime = db.Column(db.String(64))
+    atime = db.Column(db.DateTime(), default=datetime.utcnow)
     aresult = db.Column(db.String(64))
 
     def __init__(self, sid, cid, atime, aresult):

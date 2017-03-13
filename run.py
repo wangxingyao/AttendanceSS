@@ -135,7 +135,7 @@ def post_attendances():
     if request.method == 'POST':
         jsonData = json.loads(request.form['data'])
         for d in jsonData['attendances']:
-            attendance = models.Attendance(sid=d['sid'], cid=d['cid'], atime=d['atime'], aresult=d['aresult'])
+            attendance = models.Attendance(sid=d['sid'], cid=d['cid'], aresult=d['aresult'])
             db.session.add(attendance)
         db.session.commit()
         return 'commit successful'
@@ -156,9 +156,9 @@ def post_attendance():
     if request.method == 'POST':
         sid = request.form['sid']
         cid = request.form['cid']
-        atime = request.form['atime']
+        # atime = request.form['atime']
         aresult = request.form['aresult']
-        if sid == '' or cid == '' or atime == '' or aresult == '':
+        if sid == '' or cid == '' or aresult == '':
             return 'commit incomplete.'
             return jsonify({'response': [{
                 'status':'no',
@@ -181,7 +181,7 @@ def post_attendance():
                 'message':"The course doesn't exist."
             }]})
 
-        attendance = models.Attendance(sid=sid, cid=cid, atime=atime, aresult=aresult)
+        attendance = models.Attendance(sid=sid, cid=cid, aresult=aresult)
         db.session.add(attendance)
         db.session.commit()
         return jsonify({'response': [{
@@ -197,6 +197,11 @@ def post_attendance():
             <p><input type=submit value=提交>
         </form>
     '''
+
+
+@app.route('/attendance/last')
+
+
 
 @app.route('/logout')
 def logout():
