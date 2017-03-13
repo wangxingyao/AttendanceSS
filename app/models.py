@@ -85,7 +85,7 @@ class Attendance(db.Model):
     aid = db.Column(db.Integer, primary_key = True)
     sid = db.Column(db.Integer)
     cid = db.Column(db.Integer)
-    atime = db.Column(db.DateTime(), default=datetime.utcnow)
+    atime = db.Column(db.DateTime(), default=datetime.now)
     aresult = db.Column(db.String(64))
 
     def __init__(self, sid, cid, aresult):

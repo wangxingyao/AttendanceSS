@@ -3,6 +3,7 @@
 
 from flask import Flask, session, redirect, url_for, escape, request, jsonify
 import json
+from datetime import datetime
 from app import db, models
 
 app = Flask(__name__)
@@ -199,7 +200,43 @@ def post_attendance():
     '''
 
 
-@app.route('/attendance/last')
+@app.route('/attendances/today', methods=['GET', 'POST'])
+def lastday():
+    if request.method == 'POST':
+        session['today'] = []
+        tname = request.form['tname']
+        teacher = models.Teacher.query.filter_by(tname=tname).first()
+        courses = models.Course.query.filter_by(tid=teacher.tid).all()
+        if courses is None:
+            session['today'].append({
+                'status':'no',
+                'message':"There is no Course."
+            })
+        else:
+            session['today'].append({
+                'status':'yes',
+                'message':"There has Course."
+            })
+        for course in courses:
+            cid = course.cid
+            timenow = datetime.now()
+            today = datetime(timenow.year, timenow.month, timenow.day)
+
+            # records = models.Attendance.query.filter(models.Attendance.atime.between(timenow-timedelta(seconds=100), timenow)).all()
+            records = models.Attendance.query.filter(models.Attendance.atime.between(today, timenow)).all()
+            for each in records:
+                if each.cid == cid:
+                    student = models.Student.query.filter_by(sid=each.sid).first()
+                    course = models.Course.query.filter_by(cid=each.cid).first()
+                    session['today'].append({
+                        'aresult': each.aresult,
+                        'cname': course.cname,
+                        'sclass': student.sclass,
+                        'sname': student.sname,
+                    })
+        print(session['today'])
+        return jsonify({'today': session['today']})
+
 
 
 
