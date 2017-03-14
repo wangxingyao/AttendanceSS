@@ -1,10 +1,20 @@
 #!venv/bin/python
 #coding:utf-8
 
-from flask import Flask, session, redirect, url_for, escape, request, jsonify
+import sys
+import os
+from flask import Flask, session, redirect, url_for, escape, request, jsonify, \
+    render_template
 import json
 from datetime import datetime
 from app import db, models
+from werkzeug import secure_filename
+
+
+UPLOAD_FOLDER = sys.path[0] + '/uploads/'
+ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'c', 'cpp'])
+basedir = os.path.abspath(os.path.dirname(__file__))
+
 
 app = Flask(__name__)
 
@@ -91,10 +101,16 @@ def login():
 @app.route('/get_cstudents', methods=['GET', 'POST'])
 def get_cstudents():
     if request.method == 'POST':
-        cid = request.form['cid']
         session['cstudents'] = []
 
-        course = models.Course.query.filter_by(cid=cid).first()
+        if request.form['cid']:
+            cid = request.form['cid']
+            course = models.Course.query.filter_by(cid=cid).first()
+        elif request.form['cname']:
+            cname = request.form['cname']
+            course = models.Course.query.filter_by(cname=cname).first()
+
+
         if course == None:
             print("The Course id isn't exist.")
             return jsonify({'cstudents': [{
@@ -102,7 +118,7 @@ def get_cstudents():
                 'message': "The Course id isn't exist."
             }]})
 
-        cstudents = models.SCourse.query.filter_by(cid=cid)
+        cstudents = models.SCourse.query.filter_by(cid=course.cid)
         if cstudents.first() == None:
             print("There is no one in the Course.")
             return jsonify({'cstudents': [{
@@ -120,8 +136,10 @@ def get_cstudents():
                 'sid': student.sid,
                 'sname': student.sname,
                 'sclass': student.sclass,
-                'surl': student.surl
+                'surl': student.surl,
+                'cname': course.cname
             })
+        print(session['cstudents'])
         return jsonify({'cstudents': session['cstudents']})
         # return redirect(url_for('return_cstudents'))
     return '''
@@ -233,11 +251,68 @@ def lastday():
                         'cname': course.cname,
                         'sclass': student.sclass,
                         'sname': student.sname,
+                        'atime': str(each.atime.strftime('%Y-%m-%d %H:%M:%S'))[2:]
                     })
-        print(session['today'])
+        # print(session['today'])
         return jsonify({'today': session['today']})
 
+@app.route('/attendances/course', methods=['GET', 'POST'])
+def course():
+    if request.method == 'POST':
+        session['course'] = []
+        cname = request.form['cname']
+        course = models.Course.query.filter_by(cname=cname).first()
+        attendances = models.Attendance.query.filter_by(cid=course.cid).all()
 
+        if attendances is None:
+            session['course'].append({
+                'status':'no',
+                'message':"There is no attendance."
+            })
+        else:
+            session['course'].append({
+                'status':'yes',
+                'message':"There has attendance."
+            })
+        for each in attendances:
+            student = models.Student.query.filter_by(sid=each.sid).first()
+            session['course'].append({
+                'aresult': each.aresult,
+                'cname': course.cname,
+                'sclass': student.sclass,
+                'sname': student.sname,
+                'atime': str(each.atime.strftime('%Y-%m-%d %H:%M:%S'))[2:]
+            })
+        return jsonify({'course': session['course']})
+
+
+def allowed_file(filename):
+    return '.' in filename and \
+        filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
+
+
+@app.route('/upload', methods=['GET', 'POST'])
+def upload_file():
+    if request.method == 'POST':
+        file = request.files['file']
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            return '''
+                上传成功
+            '''
+            return redirect(url_for('uploaded_file',filename=filename))
+    return render_template('upload_file.html')
+    '''
+    <!doctype html>
+    <title>请提交Excel表</title>
+    <h1>请提交Excel表</h1>
+    <img src="{{ url_for('static', filename='images/Course.png') }}">
+    <form action="" method=post enctype=multipart/form-data>
+    <p><input type=file name=file>
+    <input type=submit value=Upload>
+    </form>
+    '''
 
 
 @app.route('/logout')
